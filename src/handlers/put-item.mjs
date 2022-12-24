@@ -35,43 +35,12 @@ export const putItemHandler = async (event) => {
 
     switch(action) {
         case "add":
-            // Creates a new item, or replaces an old item with a new item
-            // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
-            var dataParams = {
-                TableName : tableName,
-                Item: {
-                    id: crypto.randomUUID().toString(),
-                    userId : userId,
-                    exercise: "pushups",
-                    amount: parseInt(amount),
-                    insertedAt: new Date().toLocaleDateString()}
-            };
-
             try {
-                const data = await ddbDocClient.send(new PutCommand(dataParams));
-                console.log("Success - item added or updated", data);
-
-                var scanParams = {
-                    ExpressionAttributeValues: {
-                      ':username': userId,
-                      ':exercise': "pushups",
-                    },
-                    // KeyConditionExpression: 'userId = :username',
-                    ProjectionExpression: 'amount',
-                    FilterExpression: 'userId = :username and exercise = :exercise',
-                    TableName: tableName
-                  };
-
-                  var scanResult = await ddbDocClient.send(new ScanCommand(scanParams));
-                  console.log("RESULTS OF THE SCAN", scanResult)
-
+                const data = await insertExercise(userId, amount);
+                var scanResult = await getUserTotal(userId)
             } catch (err) {
                 console.log("Error", err.stack);
-
-                return {
-                    statusCode: 200,
-                    body: "Something went wrong."
-                };
+                return errorMessage()
             }
             break;
     }
@@ -97,4 +66,43 @@ export const putItemHandler = async (event) => {
 
 function sumItems(items) {
     return items.reduce((acc, x) => acc + x.amount, 0)
+}
+
+async function insertExercise(userId, amount) {
+    var dataParams = {
+        TableName : tableName,
+        Item: {
+            id: crypto.randomUUID().toString(),
+            userId : userId,
+            exercise: "pushups",
+            amount: parseInt(amount),
+            insertedAt: new Date().toLocaleDateString()}
+    };
+
+    // Creates a new item, or replaces an old item with a new item
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
+    return await ddbDocClient.send(new PutCommand(dataParams));
+}
+
+async function getUserTotal(userId) {
+    var scanParams = {
+        ExpressionAttributeValues: {
+          ':username': userId,
+          ':exercise': "pushups",
+        },
+        // KeyConditionExpression: 'userId = :username',
+        ProjectionExpression: 'amount',
+        FilterExpression: 'userId = :username and exercise = :exercise',
+        TableName: tableName
+      };
+
+      return await ddbDocClient.send(new ScanCommand(scanParams));
+
+}
+
+function errorMessage() {
+    return {
+        statusCode: 200,
+        body: "Something went wrong."
+    };
 }
