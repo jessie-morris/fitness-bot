@@ -13,17 +13,12 @@ const tableName = process.env.SAMPLE_TABLE;
 import queryString from 'querystring';
 import crypto from 'crypto'
 
-/**
- * A simple example includes a HTTP post method to add one item to a DynamoDB table.
- */
 export const putItemHandler = async (event) => {
     if (event.httpMethod !== 'POST') {
         throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
     }
     // All log statements are written to CloudWatch
     const params = queryString.parse(event.body);
-    console.dir(event);
-
     console.dir(params)
 
     const userId = params.user_name;
@@ -38,30 +33,41 @@ export const putItemHandler = async (event) => {
             try {
                 const data = await insertExercise(userId, amount);
                 var scanResult = await getUserTotal(userId)
+                return insertMessage(userId, scanResult)
             } catch (err) {
                 console.log("Error", err.stack);
                 return errorMessage()
             }
             break;
+        case "leaderboard":
+            try {
+                var scanResult = await getLeaderboard()
+                return leaderboardMessage(scanResult)
+            } catch (err) {
+                console.log("Error", err.stack);
+                return errorMessage()
+            }
+            break;
+        case "today":
+            try {
+                var scanResult = await getDailyPushups()
+                return leaderboardMessage(scanResult)
+            } catch (err) {
+                console.log("Error", err.stack);
+                return errorMessage()
+            }
+        case "month":
+            try {
+                var scanResult = await getMonthlyPushups()
+                return leaderboardMessage(scanResult)
+            } catch (err) {
+                console.log("Error", err.stack);
+                return errorMessage()
+            }
     }
 
-    const slackMessage = {
-        "response_type": "in_channel",
-        "text": userId + " is now at " + sumItems(scanResult.Items) + " pushups!  Get it girl!",
-        attachments: []
-    };
-
-    const response = {
-        statusCode: 200,
-        body: JSON.stringify(slackMessage)
-    };
-
-    return response
-
-
-    // All log statements are written to CloudWatch
+    return errorMessage()
     // console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
-
 };
 
 function sumItems(items) {
@@ -76,10 +82,9 @@ async function insertExercise(userId, amount) {
             userId : userId,
             exercise: "pushups",
             amount: parseInt(amount),
-            insertedAt: new Date().toLocaleDateString()}
+            insertedAt: new Date().toLocaleDateString('en-ZA', {timeZone: "America/New_York"})
+        }
     };
-
-    // Creates a new item, or replaces an old item with a new item
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
     return await ddbDocClient.send(new PutCommand(dataParams));
 }
@@ -90,7 +95,6 @@ async function getUserTotal(userId) {
           ':username': userId,
           ':exercise': "pushups",
         },
-        // KeyConditionExpression: 'userId = :username',
         ProjectionExpression: 'amount',
         FilterExpression: 'userId = :username and exercise = :exercise',
         TableName: tableName
@@ -100,9 +104,97 @@ async function getUserTotal(userId) {
 
 }
 
+async function getLeaderboard() {
+    var scanParams = {
+        ExpressionAttributeValues: {
+          ':exercise': "pushups",
+        },
+        ProjectionExpression: 'userId, amount',
+        FilterExpression: 'exercise = :exercise',
+        TableName: tableName
+      };
+
+      return await ddbDocClient.send(new ScanCommand(scanParams));
+
+}
+
+async function getDailyPushups() {
+    var today = new Date().toLocaleDateString('en-ZA', {timeZone: "America/New_York"})
+    var scanParams = {
+        ExpressionAttributeValues: {
+          ':exercise': "pushups",
+          ':today': today
+        },
+        ProjectionExpression: 'userId, amount',
+        FilterExpression: 'exercise = :exercise and insertedAt >= :today',
+        TableName: tableName
+      };
+
+      return await ddbDocClient.send(new ScanCommand(scanParams));
+}
+
+async function getMonthlyPushups() {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    var formattedDate = firstDay.toLocaleDateString('en-ZA', {timeZone: "America/New_York"})
+
+    var scanParams = {
+        ExpressionAttributeValues: {
+          ':exercise': "pushups",
+          ':firstOfMonth': formattedDate
+        },
+        ProjectionExpression: 'userId, amount',
+        FilterExpression: 'exercise = :exercise and insertedAt >= :firstOfMonth',
+        TableName: tableName
+      };
+
+      return await ddbDocClient.send(new ScanCommand(scanParams));
+}
+
+function insertMessage(userId, scanResult) {
+    const slackMessage = {
+        "response_type": "in_channel",
+        "text": userId + " is now at " + sumItems(scanResult.Items) + " pushups!  Get it girl!",
+        attachments: []
+    };
+    console.log("are we outsiiiide")
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify(slackMessage)
+    };
+    return response;
+}
+
+function leaderboardMessage(scanResult) {
+    var leaderboard = group_by_userId(scanResult.Items)
+
+    const slackMessage = {
+        "response_type": "in_channel",
+        "text": JSON.stringify(leaderboard),
+        attachments: []
+    };
+
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify(slackMessage)
+    };
+    return response;
+}
+
 function errorMessage() {
     return {
         statusCode: 200,
         body: "Something went wrong."
     };
 }
+
+function group_by_userId(items) {
+    return items.reduce((acc, obj) => {
+       const key = obj["userId"];
+       if (!acc[key]) {
+          acc[key] = 0;
+       }
+        acc[key] = acc[key] + obj.amount;
+       return acc;
+    }, {});
+ }
