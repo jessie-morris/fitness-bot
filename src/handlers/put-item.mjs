@@ -1,6 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import * as db from '../db.mjs'
+import * as messages from '../messages.mjs'
 
 const client = new DynamoDBClient({});
 const ddbDocClient = DynamoDBDocumentClient.from(client);
@@ -31,40 +32,40 @@ export const putItemHandler = async (event) => {
             try {
                 const data = await db.insertExercise(userId, amount);
                 var scanResult = await db.getUserTotal(userId)
-                return insertMessage(userId, scanResult)
+                return messages.insertMessage(userId, scanResult)
             } catch (err) {
                 console.log("Error", err.stack);
-                return errorMessage()
+                return messages.errorMessage()
             }
             break;
         case "leaderboard":
             try {
                 var scanResult = await getLeaderboard()
-                return leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult)
             } catch (err) {
                 console.log("Error", err.stack);
-                return errorMessage()
+                return messages.errorMessage()
             }
             break;
         case "today":
             try {
                 var scanResult = await getDailyPushups()
-                return leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult)
             } catch (err) {
                 console.log("Error", err.stack);
-                return errorMessage()
+                return messages.errorMessage()
             }
         case "month":
             try {
                 var scanResult = await getMonthlyPushups()
-                return leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult)
             } catch (err) {
                 console.log("Error", err.stack);
-                return errorMessage()
+                return messages.errorMessage()
             }
     }
 
-    return errorMessage()
+    return messages.errorMessage()
 };
 
 function sumItems(items) {
@@ -117,64 +118,3 @@ async function getMonthlyPushups() {
 
       return await ddbDocClient.send(new ScanCommand(scanParams));
 }
-
-function insertMessage(userId, scanResult) {
-    const slackMessage = {
-        "response_type": "in_channel",
-        "text": userId + " is now at " + sumItems(scanResult.Items) + " pushups!  Get it girl!",
-        attachments: []
-    };
-    console.log("are we outsiiiide")
-    const response = {
-        statusCode: 200,
-        body: JSON.stringify(slackMessage)
-    };
-    return response;
-}
-
-function leaderboardMessage(scanResult) {
-    var leaderboard = leaderboard_formatter(scanResult.Items)
-    var pretty_print = leaderboard.map(item => ({ text: item.userId + ": " + item.amount }));
-
-    const slackMessage = {
-        "response_type": "in_channel",
-        "text": "The standings are",
-        attachments: pretty_print
-    };
-
-    const response = {
-        statusCode: 200,
-        body: JSON.stringify(slackMessage)
-    };
-    return response;
-}
-
-function errorMessage() {
-    return {
-        statusCode: 200,
-        body: "Something went wrong."
-    };
-}
-
-function group_by_userId(items) {
-    return items.reduce((acc, obj) => {
-       const key = obj["userId"];
-       if (!acc[key]) {
-          acc[key] = 0;
-       }
-        acc[key] = acc[key] + obj.amount;
-       return acc;
-    }, {});
- }
-
- function leaderboard_formatter(items) {
-    var grouped_result = items.reduce(function(acc, item) {
-        if (!acc[item.userId]) {
-          acc[item.userId] = { userId: item.userId, amount: 0 };
-        }
-        acc[item.userId].amount += item.amount;
-        return acc;
-      }, {});
-
-      return Object.values(grouped_result).sort((a,b) => b.amount - a.amount)
- }
