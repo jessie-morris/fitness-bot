@@ -27,46 +27,34 @@ export const putItemHandler = async (event) => {
     let action, amount;
     [action, amount] = command_parts
 
-    switch(action) {
-        case "add":
-            try {
+    try {
+        switch (action) {
+            case "add":
                 const data = await db.insertExercise(userId, amount);
                 var scanResult = await db.getUserTotal(userId)
                 return messages.insertMessage(userId, scanResult)
-            } catch (err) {
-                console.log("Error", err.stack);
-                return messages.errorMessage()
-            }
-            break;
-        case "leaderboard":
-            try {
+                break;
+            case "leaderboard":
                 var scanResult = await getLeaderboard()
                 return messages.leaderboardMessage(scanResult)
-            } catch (err) {
-                console.log("Error", err.stack);
-                return messages.errorMessage()
-            }
-            break;
-        case "today":
-            try {
+                break;
+            case "today":
                 var scanResult = await getDailyPushups()
                 return messages.leaderboardMessage(scanResult)
-            } catch (err) {
-                console.log("Error", err.stack);
-                return messages.errorMessage()
-            }
-        case "month":
-            try {
+                break;
+            case "month":
                 var scanResult = await getMonthlyPushups()
                 return messages.leaderboardMessage(scanResult)
-            } catch (err) {
-                console.log("Error", err.stack);
-                return messages.errorMessage()
-            }
+                break;
+        }
+    } catch (err) {
+        console.log("Error", err.stack);
+        return messages.errorMessage()
     }
 
     return messages.errorMessage()
-};
+}
+
 
 function sumItems(items) {
     return items.reduce((acc, x) => acc + x.amount, 0)
@@ -75,46 +63,46 @@ function sumItems(items) {
 async function getLeaderboard() {
     var scanParams = {
         ExpressionAttributeValues: {
-          ':exercise': "pushups",
+            ':exercise': "pushups",
         },
         ProjectionExpression: 'userId, amount',
         FilterExpression: 'exercise = :exercise',
         TableName: tableName
-      };
+    };
 
-      return await ddbDocClient.send(new ScanCommand(scanParams));
+    return await ddbDocClient.send(new ScanCommand(scanParams));
 
 }
 
 async function getDailyPushups() {
-    var today = new Date().toLocaleDateString('en-ZA', {timeZone: "America/New_York"})
+    var today = new Date().toLocaleDateString('en-ZA', { timeZone: "America/New_York" })
     var scanParams = {
         ExpressionAttributeValues: {
-          ':exercise': "pushups",
-          ':today': today
+            ':exercise': "pushups",
+            ':today': today
         },
         ProjectionExpression: 'userId, amount',
         FilterExpression: 'exercise = :exercise and insertedAt >= :today',
         TableName: tableName
-      };
+    };
 
-      return await ddbDocClient.send(new ScanCommand(scanParams));
+    return await ddbDocClient.send(new ScanCommand(scanParams));
 }
 
 async function getMonthlyPushups() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    var formattedDate = firstDay.toLocaleDateString('en-ZA', {timeZone: "America/New_York"})
+    var formattedDate = firstDay.toLocaleDateString('en-ZA', { timeZone: "America/New_York" })
 
     var scanParams = {
         ExpressionAttributeValues: {
-          ':exercise': "pushups",
-          ':firstOfMonth': formattedDate
+            ':exercise': "pushups",
+            ':firstOfMonth': formattedDate
         },
         ProjectionExpression: 'userId, amount',
         FilterExpression: 'exercise = :exercise and insertedAt >= :firstOfMonth',
         TableName: tableName
-      };
+    };
 
-      return await ddbDocClient.send(new ScanCommand(scanParams));
+    return await ddbDocClient.send(new ScanCommand(scanParams));
 }

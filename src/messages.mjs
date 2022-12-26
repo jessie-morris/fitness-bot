@@ -18,7 +18,7 @@ export function leaderboardMessage(scanResult) {
 
     const slackMessage = {
         "response_type": "in_channel",
-        "text": "The standings are",
+        "text": "The standings are:",
         attachments: pretty_print
     };
 
