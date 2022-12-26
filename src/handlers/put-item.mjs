@@ -1,8 +1,7 @@
-// Create clients and set shared const values outside of the handler.
-
-// Create a DocumentClient that represents the query to add an item
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import * as db from '../db.mjs'
+
 const client = new DynamoDBClient({});
 const ddbDocClient = DynamoDBDocumentClient.from(client);
 
@@ -11,7 +10,6 @@ const tableName = process.env.SAMPLE_TABLE;
 
 //My imports
 import queryString from 'querystring';
-import crypto from 'crypto'
 
 export const putItemHandler = async (event) => {
     if (event.httpMethod !== 'POST') {
@@ -31,8 +29,8 @@ export const putItemHandler = async (event) => {
     switch(action) {
         case "add":
             try {
-                const data = await insertExercise(userId, amount);
-                var scanResult = await getUserTotal(userId)
+                const data = await db.insertExercise(userId, amount);
+                var scanResult = await db.getUserTotal(userId)
                 return insertMessage(userId, scanResult)
             } catch (err) {
                 console.log("Error", err.stack);
@@ -67,41 +65,10 @@ export const putItemHandler = async (event) => {
     }
 
     return errorMessage()
-    // console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
 };
 
 function sumItems(items) {
     return items.reduce((acc, x) => acc + x.amount, 0)
-}
-
-async function insertExercise(userId, amount) {
-    var dataParams = {
-        TableName : tableName,
-        Item: {
-            id: crypto.randomUUID().toString(),
-            userId : userId,
-            exercise: "pushups",
-            amount: parseInt(amount),
-            insertedAt: new Date().toLocaleDateString('en-ZA', {timeZone: "America/New_York"})
-        }
-    };
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
-    return await ddbDocClient.send(new PutCommand(dataParams));
-}
-
-async function getUserTotal(userId) {
-    var scanParams = {
-        ExpressionAttributeValues: {
-          ':username': userId,
-          ':exercise': "pushups",
-        },
-        ProjectionExpression: 'amount',
-        FilterExpression: 'userId = :username and exercise = :exercise',
-        TableName: tableName
-      };
-
-      return await ddbDocClient.send(new ScanCommand(scanParams));
-
 }
 
 async function getLeaderboard() {
@@ -166,12 +133,13 @@ function insertMessage(userId, scanResult) {
 }
 
 function leaderboardMessage(scanResult) {
-    var leaderboard = group_by_userId(scanResult.Items)
+    var leaderboard = leaderboard_formatter(scanResult.Items)
+    var pretty_print = leaderboard.map(item => ({ text: item.userId + ": " + item.amount }));
 
     const slackMessage = {
         "response_type": "in_channel",
-        "text": JSON.stringify(leaderboard),
-        attachments: []
+        "text": "The standings are",
+        attachments: pretty_print
     };
 
     const response = {
@@ -197,4 +165,16 @@ function group_by_userId(items) {
         acc[key] = acc[key] + obj.amount;
        return acc;
     }, {});
+ }
+
+ function leaderboard_formatter(items) {
+    var grouped_result = items.reduce(function(acc, item) {
+        if (!acc[item.userId]) {
+          acc[item.userId] = { userId: item.userId, amount: 0 };
+        }
+        acc[item.userId].amount += item.amount;
+        return acc;
+      }, {});
+
+      return Object.values(grouped_result).sort((a,b) => b.amount - a.amount)
  }
