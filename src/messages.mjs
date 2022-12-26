@@ -1,8 +1,8 @@
-export function insertMessage(userId, scanResult) {
+export function insertMessage(userId, exercise, scanResult) {
     const randomAffirmation = affirmations(Math.floor(Math.random() * 4))
     const slackMessage = {
         "response_type": "in_channel",
-        "text": userId + " is now at " + sumItems(scanResult.Items) + " pushups! " + randomAffirmation,
+        "text": userId + " is now at " + sumItems(scanResult.Items) + " " + exercise + "! " + randomAffirmation,
         attachments: []
     };
     const response = {
