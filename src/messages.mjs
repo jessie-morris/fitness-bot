@@ -36,6 +36,30 @@ export function errorMessage() {
     };
 }
 
+export function helpMessage() {
+    const slackMessage = {
+        "response_type": "in_channel",
+        "text": "instructions",
+        "attachments": [
+            {
+                "text": "This bot can track [p]ushups, [s]quats, and [c]hinups"
+            },
+            {
+                "text": "`/fit {p,s,c} add <amount>` to add <amount> pushups, squats or chinups to your total"
+            },
+            {
+                "text": "`/fit {p,s,c} {today, week, month, year}` to see the standings for a specified time period"
+            }
+        ]
+    };
+
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify(slackMessage)
+    };
+    return response;
+}
+
 function affirmations(index) {
     return [
         "Get it girl!",

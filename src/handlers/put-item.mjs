@@ -41,9 +41,10 @@ export const putItemHandler = async (event) => {
                 var scanResult = await db.getWeeklyReps(exercise)
                 return messages.leaderboardMessage(scanResult)
                 break;
-            // case "help":
-            //     return messages.helpMessage()
-            //     break;
+            default:
+                console.log("did i make ithere???")
+                return messages.helpMessage()
+                break;
         }
     } catch (err) {
         console.log("Error", err.stack);
@@ -71,6 +72,9 @@ function translate_exercise(exercise) {
         case "chinup":
         case "chinups":
             return "chinups"
+            break;
+        default:
+            return "help"
             break;
     }
 }
