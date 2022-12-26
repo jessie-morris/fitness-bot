@@ -8,19 +8,13 @@ const tableName = process.env.SAMPLE_TABLE;
 import queryString from 'querystring';
 
 export const putItemHandler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        throw new Error(`postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
-    }
-    // All log statements are written to CloudWatch
     const params = queryString.parse(event.body);
     console.dir(params)
 
     const userId = params.user_name;
-    const command = params.text;
-    const command_parts = command.split(" ");
 
     let action, amount;
-    [action, amount] = command_parts
+    [action, amount] = params.text.split(" ");
 
     try {
         switch (action) {
