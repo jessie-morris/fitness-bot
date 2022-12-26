@@ -38,3 +38,51 @@ export async function getUserTotal(userId) {
       return await ddbDocClient.send(new ScanCommand(scanParams));
 
 }
+
+
+export async function getLeaderboard() {
+    var scanParams = {
+        ExpressionAttributeValues: {
+            ':exercise': "pushups",
+        },
+        ProjectionExpression: 'userId, amount',
+        FilterExpression: 'exercise = :exercise',
+        TableName: tableName
+    };
+
+    return await ddbDocClient.send(new ScanCommand(scanParams));
+
+}
+
+export async function getDailyPushups() {
+    var today = new Date().toLocaleDateString('en-ZA', { timeZone: "America/New_York" })
+    var scanParams = {
+        ExpressionAttributeValues: {
+            ':exercise': "pushups",
+            ':today': today
+        },
+        ProjectionExpression: 'userId, amount',
+        FilterExpression: 'exercise = :exercise and insertedAt >= :today',
+        TableName: tableName
+    };
+
+    return await ddbDocClient.send(new ScanCommand(scanParams));
+}
+
+export async function getMonthlyPushups() {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    var formattedDate = firstDay.toLocaleDateString('en-ZA', { timeZone: "America/New_York" })
+
+    var scanParams = {
+        ExpressionAttributeValues: {
+            ':exercise': "pushups",
+            ':firstOfMonth': formattedDate
+        },
+        ProjectionExpression: 'userId, amount',
+        FilterExpression: 'exercise = :exercise and insertedAt >= :firstOfMonth',
+        TableName: tableName
+    };
+
+    return await ddbDocClient.send(new ScanCommand(scanParams));
+}

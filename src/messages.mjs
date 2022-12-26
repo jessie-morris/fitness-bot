@@ -1,10 +1,10 @@
 export function insertMessage(userId, scanResult) {
+    const randomAffirmation = affirmations(Math.floor(Math.random() * 4))
     const slackMessage = {
         "response_type": "in_channel",
-        "text": userId + " is now at " + sumItems(scanResult.Items) + " pushups!  Get it girl!",
+        "text": userId + " is now at " + sumItems(scanResult.Items) + " pushups! " + randomAffirmation,
         attachments: []
     };
-    console.log("are we outsiiiide")
     const response = {
         statusCode: 200,
         body: JSON.stringify(slackMessage)
@@ -36,14 +36,27 @@ export function errorMessage() {
     };
 }
 
+function affirmations(index) {
+    return [
+        "Get it girl!",
+        "Great job!",
+        "Keep it up!",
+        ":muscle::muscle::muscle:"
+    ][index]
+}
+
 function leaderboard_formatter(items) {
-    var grouped_result = items.reduce(function(acc, item) {
+    var grouped_result = items.reduce(function (acc, item) {
         if (!acc[item.userId]) {
-          acc[item.userId] = { userId: item.userId, amount: 0 };
+            acc[item.userId] = { userId: item.userId, amount: 0 };
         }
         acc[item.userId].amount += item.amount;
         return acc;
-      }, {});
+    }, {});
 
-      return Object.values(grouped_result).sort((a,b) => b.amount - a.amount)
+    return Object.values(grouped_result).sort((a, b) => b.amount - a.amount)
+}
+
+function sumItems(items) {
+    return items.reduce((acc, x) => acc + x.amount, 0)
 }
