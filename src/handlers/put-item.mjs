@@ -1,11 +1,6 @@
 import * as db from '../db.mjs'
 import * as messages from '../messages.mjs'
 import * as legacy from '../legacy.mjs'
-
-// Get the DynamoDB table name from environment variables
-const tableName = process.env.EXERCISE_TABLE;
-
-//My imports
 import queryString from 'querystring';
 
 export const putItemHandler = async (event) => {
@@ -17,7 +12,6 @@ export const putItemHandler = async (event) => {
     let action, exercise, amount;
     [exercise, action, amount] = params.text.split(" ");
     exercise = translate_exercise(exercise)
-    console.log("exercise after", exercise)
 
     try {
         switch (action) {
