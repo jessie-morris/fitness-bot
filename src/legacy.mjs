@@ -52,3 +52,34 @@ function pushups(year) {
             ]
         }
 }
+
+function chinups(year) {
+    switch(year) {
+        case "2022":
+            return [
+                { text: "ghost: 376" },
+                { text: "czthorpe: 233" },
+                { text: "shoard331: 222" },
+                { text: "antoncmorgan: 100" },
+                { text: "lukeschill96: 79" },
+                { text: "mbclutter: 56" },
+            ]
+            break;
+    }
+}
+
+function squats(year) {
+    switch(year) {
+        case "2022":
+            return [
+                { text: "ghost: 901" },
+                { text: "czthorpe: 862" },
+                { text: "old-man-zeeb: 665" },
+                { text: "boydzilla: 475" },
+                { text: "shoard331: 260" },
+                { text: "levi: 225" },
+                { text: "lukeschill96: 10"}
+            ]
+            break;
+    }
+}
