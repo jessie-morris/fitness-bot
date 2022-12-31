@@ -12,13 +12,13 @@ export function insertMessage(userId, exercise, scanResult) {
     return response;
 }
 
-export function leaderboardMessage(scanResult) {
+export function leaderboardMessage(scanResult, exercise) {
     var leaderboard = leaderboard_formatter(scanResult.Items)
     var pretty_print = leaderboard.map(item => ({ text: item.userId + ": " + item.amount }));
 
     const slackMessage = {
         "response_type": "in_channel",
-        "text": "The standings are:",
+        "text": "The " + exercise + " standings are:",
         attachments: pretty_print
     };
 
@@ -29,10 +29,10 @@ export function leaderboardMessage(scanResult) {
     return response;
 }
 
-export function legacyLeaderboardMessage(results) {
+export function legacyLeaderboardMessage(results, exercise) {
     const slackMessage = {
         "response_type": "in_channel",
-        "text": "The standings are:",
+        "text": "The " + exercise + " standings are:",
         attachments: results
     };
 

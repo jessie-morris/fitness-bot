@@ -1,5 +1,20 @@
 # fitness-bot
 
+A slash command slack bot for tracking exercise.  This bot currently supports pushups, chinups and squats.  It must be installed in slack and deployed to aws using SAM.  It expects the following grammar per hits help text
+
+```
+instructions
+
+This bot can track [p]ushups, [s]quats, and [c]hinups
+
+/fit {p,s,c} add <amount> to add <amount> pushups, squats or chinups to your total
+
+/fit {p,s,c} {today, week, month, year} to see the standings for a specified time period
+
+/fit {p,s,c} legacy <year> to see the standings for the before times {2020-2022}
+
+```
+
 This project contains source code and supporting files for a serverless application that you can deploy with the AWS Serverless Application Model (AWS SAM) command line interface (CLI). It includes the following files and folders:
 
 - `src` - Code for the application's Lambda function.
@@ -9,8 +24,7 @@ This project contains source code and supporting files for a serverless applicat
 
 The application uses several AWS resources, including Lambda functions, an API Gateway API, and Amazon DynamoDB tables. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
 
-
-## Deploy the sample application
+## Deploy the application
 
 The AWS SAM CLI is an extension of the AWS CLI that adds functionality for building and testing Lambda applications. It uses Docker to run your functions in an Amazon Linux environment that matches Lambda. It can also emulate your application's build environment and API.
 
@@ -42,7 +56,7 @@ The API Gateway endpoint API will be displayed in the outputs when the deploymen
 Build your application by using the `sam build` command.
 
 ```bash
-my-application$ sam build
+fitness-bot$ sam build
 ```
 
 The AWS SAM CLI installs dependencies that are defined in `package.json`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
@@ -52,15 +66,15 @@ Test a single function by invoking it directly with a test event. An event is a 
 Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
-my-application$ sam local invoke putItemFunction --event events/event-post-item.json
-my-application$ sam local invoke getAllItemsFunction --event events/event-get-all-items.json
+fitness-bot$ sam local invoke putItemFunction --event events/event-post-item.json
+fitness-bot$ sam local invoke getAllItemsFunction --event events/event-get-all-items.json
 ```
 
 The AWS SAM CLI can also emulate your application's API. Use the `sam local start-api` command to run the API locally on port 3000.
 
 ```bash
-my-application$ sam local start-api
-my-application$ curl http://localhost:3000/
+fitness-bot$ sam local start-api
+fitness-bot$ curl http://localhost:3000/
 ```
 
 The AWS SAM CLI reads the application template to determine the API's routes and the functions that they invoke. The `Events` property on each function's definition includes the route and method for each path.
@@ -74,34 +88,11 @@ The AWS SAM CLI reads the application template to determine the API's routes and
             Method: GET
 ```
 
-## Add a resource to your application
-The application template uses AWS SAM to define application resources. AWS SAM is an extension of AWS CloudFormation with a simpler syntax for configuring common serverless application resources, such as functions, triggers, and APIs. For resources that aren't included in the [AWS SAM specification](https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md), you can use the standard [AWS CloudFormation resource types](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html).
-
-Update `template.yaml` to add a dead-letter queue to your application. In the **Resources** section, add a resource named **MyQueue** with the type **AWS::SQS::Queue**. Then add a property to the **AWS::Serverless::Function** resource named **DeadLetterQueue** that targets the queue's Amazon Resource Name (ARN), and a policy that grants the function permission to access the queue.
-
-```
-Resources:
-  MyQueue:
-    Type: AWS::SQS::Queue
-  getAllItemsFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
-      Runtime: nodejs18.x
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt MyQueue.Arn
-      Policies:
-        - SQSSendMessagePolicy:
-            QueueName: !GetAtt MyQueue.QueueName
-```
-
-The dead-letter queue is a location for Lambda to send events that could not be processed. It's only used if you invoke your function asynchronously, but it's useful here to show how you can modify your application's resources and function configuration.
 
 Deploy the updated application.
 
 ```bash
-my-application$ sam deploy
+fitness-bot$ sam build && sam deploy
 ```
 
 Open the [**Applications**](https://console.aws.amazon.com/lambda/home#/applications) page of the Lambda console, and choose your application. When the deployment completes, view the application resources on the **Overview** tab to see the new resource. Then, choose the function to see the updated configuration that specifies the dead-letter queue.
@@ -113,7 +104,7 @@ To simplify troubleshooting, the AWS SAM CLI has a command called `sam logs`. `s
 **NOTE:** This command works for all Lambda functions, not just the ones you deploy using AWS SAM.
 
 ```bash
-my-application$ sam logs -n putItemFunction --stack-name sam-app --tail
+fitness-bot$ sam logs -n putItemFunction --stack-name sam-app --tail
 ```
 
 **NOTE:** This uses the logical name of the function within the stack. This is the correct name to use when searching logs inside an AWS Lambda function within a CloudFormation stack, even if the deployed function name varies due to CloudFormation's unique resource name generation.
@@ -125,8 +116,8 @@ You can find more information and examples about filtering Lambda function logs 
 Tests are defined in the `__tests__` folder in this project. Use `npm` to install the [Jest test framework](https://jestjs.io/) and run unit tests.
 
 ```bash
-my-application$ npm install
-my-application$ npm run test
+fitness-bot$ npm install
+fitness-bot$ npm run test
 ```
 
 ## Cleanup

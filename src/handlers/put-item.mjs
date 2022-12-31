@@ -22,23 +22,23 @@ export const putItemHandler = async (event) => {
                 break;
             case "year":
                 var scanResult = await db.getYearlyReps(exercise)
-                return messages.leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult, exercise)
                 break;
             case "today":
                 var scanResult = await db.getDailyReps(exercise)
-                return messages.leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult, exercise)
                 break;
             case "month":
                 var scanResult = await db.getMonthlyReps(exercise)
-                return messages.leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult, exercise)
                 break;
             case "week":
                 var scanResult = await db.getWeeklyReps(exercise)
-                return messages.leaderboardMessage(scanResult)
+                return messages.leaderboardMessage(scanResult, exercise)
                 break;
             case "legacy":
                 var results = legacy.legacy_result(exercise, amount)
-                return messages.legacyLeaderboardMessage(results)
+                return messages.legacyLeaderboardMessage(results, exercise)
                 break;
             default:
                 return messages.helpMessage()
