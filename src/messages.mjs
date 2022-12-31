@@ -29,6 +29,20 @@ export function leaderboardMessage(scanResult) {
     return response;
 }
 
+export function legacyLeaderboardMessage(results) {
+    const slackMessage = {
+        "response_type": "in_channel",
+        "text": "The standings are:",
+        attachments: results
+    };
+
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify(slackMessage)
+    };
+    return response;
+}
+
 export function errorMessage() {
     return {
         statusCode: 200,
@@ -49,6 +63,9 @@ export function helpMessage() {
             },
             {
                 "text": "`/fit {p,s,c} {today, week, month, year}` to see the standings for a specified time period"
+            },
+            {
+                "text": "`/fit {p,s,c} legacy <year>` to see the standings for the before times {2020-2022}"
             }
         ]
     };
@@ -65,7 +82,12 @@ function affirmations(index) {
         "Get it girl!",
         "Great job!",
         "Keep it up!",
-        ":muscle::muscle::muscle:"
+        ":muscle::muscle::muscle:",
+        "I believe in you!",
+        "More More More!",
+        "You have pleased the robot",
+        "You are amazing!"
+
     ][index]
 }
 

@@ -1,8 +1,9 @@
 import * as db from '../db.mjs'
 import * as messages from '../messages.mjs'
+import * as legacy from '../legacy.mjs'
 
 // Get the DynamoDB table name from environment variables
-const tableName = process.env.SAMPLE_TABLE;
+const tableName = process.env.EXERCISE_TABLE;
 
 //My imports
 import queryString from 'querystring';
@@ -41,8 +42,11 @@ export const putItemHandler = async (event) => {
                 var scanResult = await db.getWeeklyReps(exercise)
                 return messages.leaderboardMessage(scanResult)
                 break;
+            case "legacy":
+                var results = legacy.legacy_result(exercise, amount)
+                return messages.legacyLeaderboardMessage(results)
+                break;
             default:
-                console.log("did i make ithere???")
                 return messages.helpMessage()
                 break;
         }
