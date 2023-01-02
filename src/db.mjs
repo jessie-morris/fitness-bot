@@ -24,13 +24,18 @@ export async function insertExercise(userId, exercise, amount) {
 }
 
 export async function getUserTotal(userId, exercise) {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), 0, 1);
+    var formattedDate = firstDay.toLocaleDateString('en-ZA')
+
     var scanParams = {
         ExpressionAttributeValues: {
           ':username': userId,
           ':exercise': exercise,
+          ':thisYear': formattedDate
         },
         ProjectionExpression: 'amount',
-        FilterExpression: 'userId = :username and exercise = :exercise',
+        FilterExpression: 'userId = :username and exercise = :exercise and insertedAt >= :thisYear',
         TableName: tableName
       };
 
@@ -40,12 +45,17 @@ export async function getUserTotal(userId, exercise) {
 
 
 export async function getYearlyReps(exercise) {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), 0, 1);
+    var formattedDate = firstDay.toLocaleDateString('en-ZA')
+
     var scanParams = {
         ExpressionAttributeValues: {
             ':exercise': exercise,
+            ':thisYear': formattedDate
         },
         ProjectionExpression: 'userId, amount',
-        FilterExpression: 'exercise = :exercise',
+        FilterExpression: 'exercise = :exercise and insertedAt >= :thisYear',
         TableName: tableName
     };
 
